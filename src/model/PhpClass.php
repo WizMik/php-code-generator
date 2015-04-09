@@ -25,10 +25,14 @@ class PhpClass extends AbstractPhpStruct implements GenerateableInterface, Trait
 	public static function fromReflection(\ReflectionClass $ref) {
 		$class = new static();
 		$class->setQualifiedName($ref->name)
-			->setAbstract($ref->isAbstract())
+            ->setAbstract($ref->isAbstract())
 			->setFinal($ref->isFinal())
 			->setConstants($ref->getConstants())
 			->setUseStatements(ReflectionUtils::getUseStatements($ref));
+
+        if ($ref->getParentClass()) {
+            $class->setParentClassName($ref->getParentClass()->getName());
+        }
 
 		if ($ref->getDocComment()) {
 			$docblock = new Docblock($ref);
@@ -39,12 +43,16 @@ class PhpClass extends AbstractPhpStruct implements GenerateableInterface, Trait
 
 		// methods
 		foreach ($ref->getMethods() as $method) {
-			$class->setMethod(static::createMethod($method));
+            if ($method->getDeclaringClass() == $ref) {
+			    $class->setMethod(static::createMethod($method));
+            }
 		}
 
 		// properties
 		foreach ($ref->getProperties() as $property) {
-			$class->setProperty(static::createProperty($property));
+            if ($property->getDeclaringClass() == $ref) {
+                $class->setProperty(static::createProperty($property));
+            }
 		}
 
 		// traits
